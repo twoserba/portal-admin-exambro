@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Admin Exambro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .table-header { background-color: #1e3a6a; }
+        
+        .custom-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <header class="bg-white p-5 shadow-sm mb-4 border-b border-gray-200">
+        <div class="max-w-[1600px] mx-auto flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <!-- Logo & Title Section -->
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 md:w-16 md:h-16 shrink-0">
+                    <img src="https://i.ibb.co.com/qY4xVJjR/logo-sekolah.png" alt="Logo Sekolah" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <h1 class="text-lg md:text-xl font-extrabold text-[#0066FF] tracking-wide leading-tight">
+                        PORTAL ADMIN EXAMBRO TWOSERBA VERSI 2
+                    </h1>
+                    <h2 class="text-base md:text-lg font-extrabold text-[#0066FF] tracking-wide leading-tight">
+                        SMP NEGERI 2 SERANG BARU
+                    </h2>
+                    <p class="text-xs md:text-sm text-gray-500 mt-0.5">
+                        Hanya kolom "Link Soal" yang dapat diisi dan diubah.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Action Controls (Search & Excel Button) -->
+            <div class="w-full lg:w-auto flex flex-col sm:flex-row items-center gap-3">
+                <div class="relative w-full sm:w-80">
+                    <input type="text" id="searchInput" placeholder="Cari Mata Pelajaran / Kelas..." 
+                           class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm shadow-sm transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 absolute left-3 top-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <button onclick="downloadExcel()" class="w-full sm:w-auto bg-[#198754] hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Download Excel
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[1600px] mx-auto px-4 pb-8">
+        <!-- Ringkasan Info (Stats Badge) -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 px-1 text-xs text-gray-500">
+            <div id="statusInfo" class="font-medium">Memuat data...</div>
+            <div class="flex gap-4">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-green-500"></span> Soal Terisi</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Soal Belum Terisi</span>
+            </div>
+        </div>
+
+        <!-- Table Card Container -->
+        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-sm text-left whitespace-nowrap">
+                    <thead class="table-header text-white">
+                        <tr>
+                            <th class="px-4 py-3.5 font-bold text-center border-r border-blue-900 tracking-wider">TOKEN</th>
+                            <th class="px-4 py-3.5 font-bold border-r border-blue-900 tracking-wider">JENIS KEGIATAN</th>
+                            <th class="px-4 py-3.5 font-bold border-r border-blue-900 tracking-wider">MATA PELAJARAN</th>
+                            <th class="px-4 py-3.5 font-bold text-center border-r border-blue-900 tracking-wider">KELAS</th>
+                            <th class="px-4 py-3.5 font-bold border-r border-blue-900 tracking-wider">LINK SOAL (SILAKAN ISI/EDIT DI SINI)</th>
+                            <th class="px-4 py-3.5 font-bold text-center border-r border-blue-900 tracking-wider">WAKTU</th>
+                            <th class="px-4 py-3.5 font-bold text-center tracking-wider">KODE PENGAWAS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
+        const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJGYNNDcuAFTqRS3VZmr-4BhNH1Zc_j60PqOWZRm91zd-IGFBFG0qZxPkBg74JmjRg/exec";
+
+        let examsData = [];
+        const tableBody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const statusInfo = document.getElementById('statusInfo');
+
+        function updateStats(data) {
+            if (!data) return;
+            const total = data.length;
+            const filled = data.filter(d => d.link && d.link.trim() !== '').length;
+            const empty = total - filled;
+            statusInfo.innerHTML = `Total Mata Pelajaran: <b class="text-gray-700">${total}</b> | Terisi: <b class="text-green-600">${filled}</b> | Belum Terisi: <b class="text-amber-600">${empty}</b>`;
+        }
+
+        function renderTable(data) {
+            tableBody.innerHTML = '';
+            
+            if(!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-gray-500 font-medium">Tidak ada data ditemukan</td></tr>`;
+                return;
+            }
+
+            data.forEach((exam, index) => {
+                const isLinkFilled = exam.link && exam.link.trim() !== '';
+                const rowClass = isLinkFilled ? (index % 2 === 0 ? 'bg-white' : 'bg-gray-50/70') : 'bg-amber-50/40';
+                const row = document.createElement('tr');
+                row.className = `${rowClass} border-b border-gray-200 hover:bg-blue-50/50 transition-colors`;
+
+                row.innerHTML = `
+                    <td class="px-4 py-3 font-bold text-center border-r border-gray-200 text-gray-900">
+                        <div class="flex items-center justify-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full ${isLinkFilled ? 'bg-green-500' : 'bg-amber-500'}" title="${isLinkFilled ? 'Soal Terisi' : 'Soal Belum Terisi'}"></span>
+                            ${exam.token}
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 border-r border-gray-200 text-gray-700 font-medium">${exam.jenis}</td>
+                    <td class="px-4 py-3 border-r border-gray-200 font-semibold text-gray-800">${exam.mapel}</td>
+                    <td class="px-4 py-3 text-center border-r border-gray-200 font-medium">${exam.kelas}</td>
+                    <td class="px-4 py-2 border-r border-gray-200 min-w-[340px]">
+                        <div class="flex items-center gap-2">
+                            <div class="relative flex-1">
+                                <input type="text" id="link-${exam.token}" value="${exam.link || ''}" 
+                                    placeholder="Paste link Google Form / Soal di sini..."
+                                    class="w-full px-3 py-1.5 border ${isLinkFilled ? 'border-gray-300' : 'border-amber-400 bg-amber-50/70'} rounded-md text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                            </div>
+                            <button onclick="saveData('${exam.id_baris}', '${exam.token}')" id="btn-${exam.token}"
+                                class="bg-[#198754] hover:bg-green-700 text-white px-4 py-1.5 rounded-md text-sm font-semibold transition-all flex-shrink-0 flex items-center justify-center min-w-[85px] shadow-sm">
+                                Simpan
+                            </button>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center border-r border-gray-200 text-gray-700 font-medium">${exam.waktu}</td>
+                    <td class="px-4 py-3 font-bold text-center text-gray-800">${exam.kode_pengawas}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            updateStats(examsData);
+        }
+
+        searchInput.addEventListener('keyup', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredData = examsData.filter(exam => 
+                exam.mapel.toLowerCase().includes(searchTerm) || 
+                exam.kelas.toLowerCase().includes(searchTerm) ||
+                exam.token.toLowerCase().includes(searchTerm) ||
+                exam.jenis.toLowerCase().includes(searchTerm)
+            );
+            renderTable(filteredData);
+        });
+
+        async function saveData(id_baris, token) {
+            const inputEl = document.getElementById(`link-${token}`);
+            const btnEl = document.getElementById(`btn-${token}`);
+            const newLink = inputEl.value;
+
+            if (!GOOGLE_APPS_SCRIPT_URL) {
+                alert("Silakan masukkan URL Web App Apps Script di dalam kode HTML terlebih dahulu.");
+                return;
+            }
+
+            const originalText = btnEl.innerText;
+            btnEl.innerText = 'Menyimpan...';
+            btnEl.disabled = true;
+            btnEl.classList.remove('bg-[#198754]', 'hover:bg-green-700');
+            btnEl.classList.add('bg-gray-400');
+
+            const resetBtn = () => {
+                btnEl.innerText = originalText;
+                btnEl.disabled = false;
+                btnEl.classList.remove('bg-blue-600', 'bg-red-600');
+                btnEl.classList.add('bg-[#198754]', 'hover:bg-green-700');
+            };
+
+            try {
+                const fetchUrl = `${GOOGLE_APPS_SCRIPT_URL}?action=update_link&id_baris=${id_baris}&link=${encodeURIComponent(newLink)}`;
+                const response = await fetch(fetchUrl);
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    btnEl.innerText = '✓ Tersimpan';
+                    btnEl.classList.remove('bg-gray-400');
+                    btnEl.classList.add('bg-blue-600');
+                    const examIndex = examsData.findIndex(e => e.token === token);
+                    if(examIndex !== -1) examsData[examIndex].link = newLink;
+                    updateStats(examsData);
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                btnEl.innerText = 'Gagal!';
+                btnEl.classList.remove('bg-gray-400');
+                btnEl.classList.add('bg-red-600');
+                console.error('Error saving data:', error);
+            } finally {
+                setTimeout(resetBtn, 2000);
+            }
+        }
+
+        async function loadDataFromSheet() {
+            if (!GOOGLE_APPS_SCRIPT_URL) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-red-500 font-medium">URL Web App Apps Script belum disetel di kode HTML.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-gray-500 font-medium animate-pulse">Memuat data dari Spreadsheet...</td></tr>`;
+            
+            try {
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL + "?action=get_all");
+                const result = await response.json();
+                
+                if (result.status === "success") {
+                    examsData = result.data;
+                    renderTable(examsData);
+                } else {
+                    throw new Error("Gagal mengambil data");
+                }
+            } catch (error) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-red-500 font-medium">Gagal memuat data. Pastikan URL Web App benar dan bisa diakses.</td></tr>`;
+                console.error('Error loading data:', error);
+            }
+        }
+
+        loadDataFromSheet();
+
+        function downloadExcel() {
+            if (!examsData || examsData.length === 0) {
+                alert("Data belum dimuat atau kosong.");
+                return;
+            }
+
+            // Gunakan XLSX dari library xlsx-js-style
+            const XLSXLib = window.XLSX;
+
+            // 1. Menyiapkan Data Struktur Baris
+            const finalData = [
+                ["DASBOARD PORTAL ADMIN APLIKASI EXAMBRO TWOSERBA VERSI 2"],
+                ["KEGIATAN PENILAIAN SUMATIF AKHIR SEMESTER"],
+                ["SMP NEGERI 2 SERANG BARU"],
+                [],
+                ["NO", "MATA PELAJARAN", "KELAS", "TOKEN", "KODE PENGAWAS"]
+            ];
+
+            examsData.forEach((exam, index) => {
+                finalData.push([
+                    index + 1,
+                    exam.mapel,
+                    exam.kelas,
+                    exam.token,
+                    exam.kode_pengawas
+                ]);
+            });
+
+            const ws = XLSXLib.utils.aoa_to_sheet(finalData);
+
+            // 2. Pengaturan Merge Judul
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+                { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } },
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 4 } }
+            ];
+
+            // 3. Pengaturan Lebar Kolom Otomatis (Auto Width)
+            ws['!cols'] = [
+                { wch: 6 },   // NO
+                { wch: 45 },  // MATA PELAJARAN
+                { wch: 10 },  // KELAS
+                { wch: 15 },  // TOKEN
+                { wch: 20 }   // KODE PENGAWAS
+            ];
+
+            // Style Definisi
+            const titleStyle = {
+                font: { name: "Calibri", sz: 12, bold: true },
+                alignment: { horizontal: "center", vertical: "center" }
+            };
+
+            const headerStyle = {
+                font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "000000" } },
+                fill: { fgColor: { rgb: "D9E1F2" } }, // Warna Soft Blue / Ice Blue seperti pada gambar
+                alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                border: {
+                    top: { style: "thin", color: { rgb: "000000" } },
+                    bottom: { style: "thin", color: { rgb: "000000" } },
+                    left: { style: "thin", color: { rgb: "000000" } },
+                    right: { style: "thin", color: { rgb: "000000" } }
+                }
+            };
+
+            const dataStyleCenter = {
+                font: { name: "Calibri", sz: 11 },
+                alignment: { horizontal: "center", vertical: "center" },
+                border: {
+                    top: { style: "thin", color: { rgb: "000000" } },
+                    bottom: { style: "thin", color: { rgb: "000000" } },
+                    left: { style: "thin", color: { rgb: "000000" } },
+                    right: { style: "thin", color: { rgb: "000000" } }
+                }
+            };
+
+            const dataStyleLeft = {
+                font: { name: "Calibri", sz: 11 },
+                alignment: { horizontal: "left", vertical: "center" },
+                border: {
+                    top: { style: "thin", color: { rgb: "000000" } },
+                    bottom: { style: "thin", color: { rgb: "000000" } },
+                    left: { style: "thin", color: { rgb: "000000" } },
+                    right: { style: "thin", color: { rgb: "000000" } }
+                }
+            };
+
+            // 4. Menerapkan Style ke Seluruh Cell
+            const range = XLSXLib.utils.decode_range(ws['!ref']);
+
+            for (let R = range.s.r; R <= range.e.r; ++R) {
+                for (let C = range.s.c; C <= range.e.c; ++C) {
+                    const cellAddress = XLSXLib.utils.encode_cell({ r: R, c: C });
+                    if (!ws[cellAddress]) continue;
+
+                    // Apply Judul (Baris 0, 1, 2)
+                    if (R >= 0 && R <= 2) {
+                        ws[cellAddress].s = titleStyle;
+                    }
+                    // Apply Header Tabel (Baris 4 / indeks 4)
+                    else if (R === 4) {
+                        ws[cellAddress].s = headerStyle;
+                    }
+                    // Apply Data Tabel (Baris 5 ke atas)
+                    else if (R >= 5) {
+                        if (C === 1) { 
+                            ws[cellAddress].s = dataStyleLeft; // Mata Pelajaran rata kiri
+                        } else {
+                            ws[cellAddress].s = dataStyleCenter; // Kolom lain rata tengah
+                        }
+                    }
+                }
+            }
+
+            // 5. Download File Excel
+            const wb = XLSXLib.utils.book_new();
+            XLSXLib.utils.book_append_sheet(wb, ws, "Data Exambro");
+            XLSXLib.writeFile(wb, "Data_Exambro_SMPN2_SerangBaru.xlsx");
+        }
+    </script>
+</body>
+</html>
