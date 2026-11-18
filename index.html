@@ -48,6 +48,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
+                <button onclick="loadDataFromSheet()" title="Segarkan Data dari Spreadsheet" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                </button>
                 <button onclick="downloadExcel()" class="w-full sm:w-auto bg-[#198754] hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -92,7 +98,7 @@
 
     <script>
         // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI SINI
-        const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyJGYNNDcuAFTqRS3VZmr-4BhNH1Zc_j60PqOWZRm91zd-IGFBFG0qZxPkBg74JmjRg/exec";
+        const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHY-Ng4nwEQ0ugowfyj0Gt4LGHEgC66Jr_kpD02N76Xlrqa6x4ot0v0OPimd_4CGehxQ/exec";
 
         let examsData = [];
         const tableBody = document.getElementById('tableBody');
@@ -198,7 +204,7 @@
                     btnEl.classList.add('bg-blue-600');
                     const examIndex = examsData.findIndex(e => e.token === token);
                     if(examIndex !== -1) examsData[examIndex].link = newLink;
-                    updateStats(examsData);
+                    renderTable(examsData); // Render ulang agar warna indikator langsung berubah
                 } else {
                     throw new Error(result.message);
                 }
@@ -218,14 +224,17 @@
                 return;
             }
 
-            tableBody.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-gray-500 font-medium animate-pulse">Memuat data dari Spreadsheet...</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7" class="px-4 py-12 text-center text-gray-500 font-medium animate-pulse">Memuat data terbaru dari Spreadsheet...</td></tr>`;
             
             try {
-                const response = await fetch(GOOGLE_APPS_SCRIPT_URL + "?action=get_all");
+                // Menambahkan parameter waktu (&t=...) untuk mencegah Browser Cache menyimpan data lama
+                const antiCacheUrl = `${GOOGLE_APPS_SCRIPT_URL}?action=get_all&t=${new Date().getTime()}`;
+                const response = await fetch(antiCacheUrl, { cache: "no-store" });
                 const result = await response.json();
                 
                 if (result.status === "success") {
-                    examsData = result.data;
+                    // Filter agar baris kosong di spreadsheet tidak ikut tampil
+                    examsData = result.data.filter(item => item.token && item.token.trim() !== "");
                     renderTable(examsData);
                 } else {
                     throw new Error("Gagal mengambil data");
